@@ -46,11 +46,28 @@ app.post('/login', async(req, res) => {
         return res.status(400).send("Некорректная пара логин/пароль");
     }
     const sessionId = await createSession(user.id)
-    console.log(sessionId)
     res.cookie('sessionId', sessionId, {
         httpOnly: true
     });
     res.status(200).json({ message: 'Аутентификация успешна' });
+})
+
+
+app.post("/masters", async(req, res) => {
+    try {
+        const { nickname } = req.body
+        const client = await pool.connect()
+        client.query("INSERT INTO masters (nickname, first_name, city) VALUES ($1, $2, $3)", [
+            nickname,
+            nickname,
+            nickname,
+        ])
+        res.status(200).json({ message: 'Аутентификация успешна' });
+        client.release()
+
+    } catch (err) {
+        console.error(err)
+    }
 })
 
 app.get("/", (req, res) => {
@@ -72,6 +89,25 @@ app.get("/masters/:nickname", async(req, res) => {
             client.release()
             return
         }
+    } catch (err) {
+        console.error(err)
+    }
+})
+
+app.patch("/masters/:nickname", async(req, res) => {
+    try {
+        const nickname = req.params.nickname
+        const { first_name, avatar_link, last_name, description } = req.body
+        const client = await pool.connect()
+        await client.query("UPDATE masters SET first_name = $1, avatar_link = $3, last_name = $4, description = $5 WHERE nickname = $2", [
+            first_name,
+            nickname,
+            avatar_link,
+            last_name,
+            description
+        ])
+        res.sendStatus(204)
+        client.release()
     } catch (err) {
         console.error(err)
     }
