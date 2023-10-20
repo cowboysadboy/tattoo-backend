@@ -129,7 +129,7 @@ app.get("/masters", async(req, res) => {
     }
 })
 
-app.get("api/masters", async(req, res) => {
+app.get("/api/masters", async(req, res) => {
     try {
         const client = await pool.connect()
         const result = await client.query("SELECT * FROM masters")
