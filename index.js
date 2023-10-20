@@ -39,7 +39,7 @@ const pool = new Pool({
     user: process.env.DB_USER,
 })
 
-app.post('/login', async(req, res) => {
+app.post('api/login', async(req, res) => {
     const { username, password } = req.body
     const user = await findUserByUsername(username)
     if (!user || user.password !== password) {
@@ -69,8 +69,12 @@ app.post("/masters", async(req, res) => {
         console.error(err)
     }
 })
+app.get('/testCookie', (req, res) => {
+    res.cookie("test", "123");
+    res.json({ ok: true });
+});
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
     res.send(`Say "Hallo", my little Friend`)
 })
 
@@ -112,11 +116,24 @@ app.patch("/masters/:nickname", async(req, res) => {
         console.error(err)
     }
 })
-
 app.get("/masters", async(req, res) => {
     try {
         const client = await pool.connect()
         const result = await client.query("SELECT * FROM masters")
+        res.cookie("test", "123")
+        res.json(result.rows)
+        client.release()
+
+    } catch (err) {
+        console.error(err)
+    }
+})
+
+app.get("api/masters", async(req, res) => {
+    try {
+        const client = await pool.connect()
+        const result = await client.query("SELECT * FROM masters")
+        res.cookie("test", "123")
         res.json(result.rows)
         client.release()
 
