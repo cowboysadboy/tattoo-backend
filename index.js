@@ -39,7 +39,7 @@ const pool = new Pool({
     user: process.env.DB_USER,
 })
 
-app.post('api/login', async(req, res) => {
+app.post('/api/login', async(req, res) => {
     const { username, password } = req.body
     const user = await findUserByUsername(username)
     if (!user || user.password !== password) {
@@ -53,7 +53,7 @@ app.post('api/login', async(req, res) => {
 })
 
 
-app.post("/masters", async(req, res) => {
+app.post("/api/masters", async(req, res) => {
     try {
         const { nickname } = req.body
         const client = await pool.connect()
@@ -69,16 +69,13 @@ app.post("/masters", async(req, res) => {
         console.error(err)
     }
 })
-app.get('/testCookie', (req, res) => {
-    res.cookie("test", "123");
-    res.json({ ok: true });
-});
+
 
 app.get("/api", (req, res) => {
     res.send(`Say "Hallo", my little Friend`)
 })
 
-app.get("/masters/:nickname", async(req, res) => {
+app.get("/api/masters/:nickname", async(req, res) => {
     try {
         const nickname = req.params.nickname
         const client = await pool.connect()
@@ -98,7 +95,7 @@ app.get("/masters/:nickname", async(req, res) => {
     }
 })
 
-app.patch("/masters/:nickname", async(req, res) => {
+app.patch("/api/masters/:nickname", async(req, res) => {
     try {
         const nickname = req.params.nickname
         const { first_name, avatar_link, last_name, description } = req.body
@@ -112,18 +109,6 @@ app.patch("/masters/:nickname", async(req, res) => {
         ])
         res.sendStatus(204)
         client.release()
-    } catch (err) {
-        console.error(err)
-    }
-})
-app.get("/masters", async(req, res) => {
-    try {
-        const client = await pool.connect()
-        const result = await client.query("SELECT * FROM masters")
-        res.cookie("test", "123")
-        res.json(result.rows)
-        client.release()
-
     } catch (err) {
         console.error(err)
     }
