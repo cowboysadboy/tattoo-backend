@@ -57,15 +57,73 @@ app.post("/api/masters", async(req, res) => {
     try {
         const { nickname } = req.body
         const client = await pool.connect()
-        client.query("INSERT INTO masters (nickname, first_name, city) VALUES ($1, $2, $3)", [
+        client.query("INSERT INTO masters (nickname) VALUES ($1) RETURNING id", [
             nickname,
-            nickname,
-            nickname,
-        ])
-        res.status(200).json({ message: 'Аутентификация успешна' });
+        ], (err, result) => {
+            if (err) {
+                res.status(500).send('Ошибка сервера');
+            } else {
+                const insertedId = result.rows[0].id;
+                client.query("INSERT INTO password_data (person_id, password) VALUES ($1, $2)", [
+                    insertedId,
+                    insertedId,
+                ], (err, result) => {
+                    if (err) {
+                        console.log(err)
+                        console.log('ОШИБКА')
+                    } else {
+                        console.log(result)
+                        console.log('ПОЛУЧИЛОСЬ')
+
+                    }
+                })
+                res.status(200).send('регистрация успешна');
+            }
+        })
+
         client.release()
 
     } catch (err) {
+        console.error(err)
+    }
+})
+
+
+app.post("/api/lead", async(req, res) => {
+    try {
+        const { master_nickname, cliet_name, client_phone, tatoo_width, tatoo_height } = req.body
+        const client = await pool.connect()
+        const result = await client.query("SELECT id FROM masters WHERE nickname = $1", [
+            master_nickname,
+        ])
+        if (result.rows.length === 0) {
+            client.release()
+            return res.status(404).send("Запись в базе данных отсутствует");
+        } else {
+            console.log(req.body, result.rows[0].id)
+            const masterId = result.rows[0].id;
+            client.query("insert into leads (master_id, cliet_name, client_phone, tatoo_width, tatoo_height) VALUES($1, $2, $3, $4, $5)", [
+                masterId,
+                cliet_name,
+                client_phone,
+                tatoo_width,
+                tatoo_height
+            ], (err, result) => {
+                if (err) {
+                    console.log(err)
+                    console.log('ОШИБКА')
+                } else {
+                    console.log(result)
+                    console.log('ПОЛУЧИЛОСЬ')
+
+                }
+            })
+            res.status(200).send('Вы отправили заявку, скоро вами свяжутся');
+            client.release()
+            return
+        }
+    } catch (err) {
+        res.status(501).send("Ошибка сервера");
         console.error(err)
     }
 })
@@ -87,6 +145,31 @@ app.get("/api/masters/:nickname", async(req, res) => {
             return res.status(404).send("Запись в базе данных отсутствует");
         } else {
             res.json(result.rows)
+            client.release()
+            return
+        }
+    } catch (err) {
+        console.error(err)
+    }
+})
+
+app.get("/api/leads/:nickname", async(req, res) => {
+    try {
+        const nickname = req.params.nickname
+        const client = await pool.connect()
+        const result = await client.query("SELECT id FROM masters WHERE nickname = $1", [
+            nickname,
+        ])
+        
+        if (result.rows.length === 0) {
+            client.release()
+            return res.status(404).send("Запись в базе данных отсутствует");
+        } else {
+            const masterId = result.rows[0].id;
+            const leads = await client.query("SELECT * FROM leads WHERE master_id = $1", [
+                masterId,
+            ])
+            res.json(leads.rows)
             client.release()
             return
         }
