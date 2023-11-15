@@ -1,5 +1,6 @@
 const express = require("express")
 const { nanoid } = require("nanoid")
+const cookieParser  = require("cookie-parser")
 const { Pool } = require("pg")
 const cors = require('cors')
 require("dotenv").config()
@@ -9,6 +10,8 @@ app.use(cors({
     credentials: true,
 }), );
 app.use(express.json());
+app.use(cookieParser());
+
 const DB = {
         users: [{ id: 1, username: "admin", password: "123456" }],
         session: []
@@ -30,6 +33,20 @@ const createSession = async userId => {
 }
 const deleteSession = async(sessionId) => {
     delete DB.session[sessionId]
+}
+
+const auth = () => async(req, res, next) => {
+    const auf = '!!!'
+    if (!req.cookies['sessionId']) {
+        console.log("нет кук")
+        res.redirect('/api/masters');
+        return next()
+    }
+    console.log("есть кука")
+    const user = await findUserBySessionId(req.cookies["sessionId"])
+    req.user = user
+    req.sessionId = req.cookies["sessionId"]
+    next()
 }
 
 const pool = new Pool({
@@ -129,7 +146,7 @@ app.post("/api/lead", async(req, res) => {
 })
 
 
-app.get("/api", (req, res) => {
+app.get("/api", auth(), (req, res) => {
     res.send(`Say "Hallo", my little Friend`)
 })
 
@@ -160,7 +177,7 @@ app.get("/api/leads/:nickname", async(req, res) => {
         const result = await client.query("SELECT id FROM masters WHERE nickname = $1", [
             nickname,
         ])
-        
+
         if (result.rows.length === 0) {
             client.release()
             return res.status(404).send("Запись в базе данных отсутствует");
